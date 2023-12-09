@@ -3,15 +3,21 @@ pragma solidity ^0.8.0;
 
 import "./Orders.sol";
 import "./Products.sol";
+import {IManager} from "./Interfaces/IManager.sol";
 import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import {OwnableUpgradeable} from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import {UUPSUpgradeable} from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
+import {ERC165Upgradeable} from "@openzeppelin/contracts-upgradeable/utils/introspection/ERC165Upgradeable.sol";
 
 contract Manager is
 Initializable,
 OwnableUpgradeable,
-UUPSUpgradeable
+UUPSUpgradeable,
+ERC165Upgradeable
 {
+    /// @dev Interface ID - IManager
+    bytes4 public constant INTERFACE_ID_IMANAGER = type(IManager).interfaceId;
+    
     Orders public ordersContract;
 
     address public admin;
@@ -72,7 +78,16 @@ UUPSUpgradeable
         __UUPSUpgradeable_init();
     }
 
+    /**
+    * @dev This function accepts bytes4 argument, meant to represent the ID for the interface we want to check against.
+    * @return `bool` returns a bool that specifies whether the Interface is supported by the contract
+    */
+    function supportsInterface(bytes4 interfaceId) public view virtual override(ERC165Upgradeable) returns (bool) {
+        return interfaceId == INTERFACE_ID_IMANAGER || super.supportsInterface(interfaceId);
+    }
+
     function setOrdersContract(address _ordersContract) external onlyAdmin {
+        require(_ordersContract != address(0), "Orders contract can not be a 0x0 address");
         ordersContract = Orders(_ordersContract);
     }
 
@@ -86,9 +101,9 @@ UUPSUpgradeable
 
     //Add an auditor to the contract such that he or she can arbitrate any future order disputes
     function addAuditor(address _auditor) external onlyAdmin returns (bool result) {
-        result = false;
         require(_auditor != address(0), "cannot add empty address");
         require(!auditorExists(_auditor), "Auditor already exists");
+        result = false;
         auditors.push(_auditor);
         activeAuditorCount++;
         result = true;

@@ -2,14 +2,19 @@
 pragma solidity ^0.8.0;
 
 import "./Products.sol";
+import {IProducts} from "./Interfaces/IProducts.sol";
+import {IOrders} from "./Interfaces/IOrders.sol";
 import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import {OwnableUpgradeable} from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import {UUPSUpgradeable} from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
+import {ERC165Upgradeable} from "@openzeppelin/contracts-upgradeable/utils/introspection/ERC165Upgradeable.sol";
 
+//ERC165Upgradeable.sol
 contract Orders is
 Initializable,
 OwnableUpgradeable,
-UUPSUpgradeable
+UUPSUpgradeable,
+ERC165Upgradeable
 {
 
 	/// @custom:oz-upgrades-unsafe-allow constructor
@@ -19,10 +24,22 @@ UUPSUpgradeable
 
 	//uups upgradeable
 	function initialize(address _productsContract) external initializer {
+		require(_productsContract != address(0), "Products contract can not be a 0x0 address");
 		admin = msg.sender;
 		productsContract = Products(_productsContract);
 		__Ownable_init(msg.sender);
 		__UUPSUpgradeable_init();
+	}
+	
+	/// @dev Interface ID - IOrders
+	bytes4 public constant INTERFACE_ID_IORDERS = type(IOrders).interfaceId;
+
+	/**
+	* @dev This function accepts bytes4 argument, meant to represent the ID for the interface we want to check against.
+	* @return `bool` returns a bool that specifies whether the Interface is supported by the contract
+	*/
+	function supportsInterface(bytes4 interfaceId) public view virtual override(ERC165Upgradeable) returns (bool) {
+		return interfaceId == INTERFACE_ID_IORDERS || super.supportsInterface(interfaceId);
 	}
 	
 	/**

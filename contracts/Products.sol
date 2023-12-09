@@ -1,20 +1,26 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
+import {IProducts} from "./Interfaces/IProducts.sol";
 import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import {OwnableUpgradeable} from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import {UUPSUpgradeable} from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
+import {ERC165Upgradeable} from "@openzeppelin/contracts-upgradeable/utils/introspection/ERC165Upgradeable.sol";
 
 contract Products is
 Initializable,
 OwnableUpgradeable,
-UUPSUpgradeable
+UUPSUpgradeable,
+ERC165Upgradeable
 {
 
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
         _disableInitializers();
     }
+
+    /// @dev Interface ID - IManager
+    bytes4 public constant INTERFACE_ID_IPRODUCTS = type(IProducts).interfaceId;
 
     address public admin;
     
@@ -39,6 +45,14 @@ UUPSUpgradeable
         admin = msg.sender;
         __Ownable_init(msg.sender);
         __UUPSUpgradeable_init();
+    }
+    
+    /**
+    * @dev This function accepts bytes4 argument, meant to represent the ID for the interface we want to check against.
+    * @return `bool` returns a bool that specifies whether the Interface is supported by the contract
+    */
+    function supportsInterface(bytes4 interfaceId) public view virtual override(ERC165Upgradeable) returns (bool) {
+        return interfaceId == INTERFACE_ID_IPRODUCTS || super.supportsInterface(interfaceId);
     }
 
     /**
